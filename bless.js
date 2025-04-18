@@ -15,7 +15,7 @@ const REQUEST_TIMEOUT = 60000; // 60 giây
 const PING_INTERVAL = 120000; // 2 phút
 
 // Endpoint để UptimeRobot ping
-app.get('/health', (req, res) => {
+app.head('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
