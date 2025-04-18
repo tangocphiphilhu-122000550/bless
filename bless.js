@@ -2,6 +2,10 @@ const puppeteer = require('puppeteer');
 const fs = require('fs').promises;
 const crypto = require('crypto');
 const chalk = require('chalk');
+const express = require('express');
+
+const app = express();
+const port = process.env.PORT || 3000;
 
 const apiBaseUrl = 'https://gateway-run.bls.dev/api/v1/nodes';
 const ipServiceUrl = 'https://tight-block-2413.txlabs.workers.dev';
@@ -9,6 +13,11 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 5000; // 5 giây
 const REQUEST_TIMEOUT = 60000; // 60 giây
 const PING_INTERVAL = 120000; // 2 phút
+
+// Endpoint để UptimeRobot ping
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
 
 // Hàm đọc danh sách token từ file data.txt
 async function readTokensFromFile() {
@@ -37,7 +46,7 @@ async function fetchIpAddress() {
     let browser;
     try {
         browser = await puppeteer.launch({
-            headless: true,
+            headless: 'new',
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         const page = await browser.newPage();
@@ -84,7 +93,7 @@ async function sendRequest(url, method, headers, body, nodeId, accountIndex, ret
     let browser;
     try {
         browser = await puppeteer.launch({
-            headless: true,
+            headless: 'new',
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security']
         });
         const page = await browser.newPage();
@@ -264,7 +273,7 @@ async function pingNode(token, nodeId, isConnected, accountIndex) {
         'Sec-Fetch-Site': 'cross-site',
         'X-Extension-Version': '0.1.8',
         'X-Extension-Signature': signature,
-        'X-Timestamp': timestamp
+        'X-Timestamp': timestamp // Sửa lỗi typo từ 'tưtimestamp'
     };
 
     console.log(chalk.yellow(`[${new Date().toISOString()}] Đang ping tài khoản ${accountIndex + 1}: ${nodeId.slice(-3)}...`));
@@ -348,5 +357,8 @@ async function main() {
     }
 }
 
-// Chạy chương trình
-main();
+// Khởi động server Express và chạy main
+app.listen(port, () => {
+    console.log(chalk.blue(`[${new Date().toISOString()}] Server đang chạy trên cổng ${port}`));
+    main();
+});
